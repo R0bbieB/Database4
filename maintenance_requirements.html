@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Maintenance Requirements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Manage Maintenance Requirements</h1>
+    <p class="lead">Configure maintenance requirements for each equipment type</p>
+
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Add New Requirement</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_maintenance_requirement') }}">
+                        <div class="form-group">
+                            <label for="item_type_id">Equipment Type</label>
+                            <select class="form-control" id="item_type_id" name="item_type_id" required>
+                                <option value="">Select Item Type</option>
+                                {% for type in item_types %}
+                                    <option value="{{ type.id }}">{{ type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maintenance_type">Maintenance Type</label>
+                            <select class="form-control" id="maintenance_type" name="maintenance_type" required>
+                                <option value="Regular Service">Regular Service</option>
+                                <option value="Hydro Test">Hydro Test</option>
+                                <option value="VIP Inspection">VIP Inspection</option>
+                                <option value="Calibration">Calibration</option>
+                                <option value="Part Replacement">Part Replacement</option>
+                                <option value="Safety Inspection">Safety Inspection</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="interval_value">Maintenance Interval</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="interval_value" name="interval_value" value="12" min="1" required>
+                                <div class="input-group-append">
+                                    <select class="form-control" id="interval_unit" name="interval_unit">
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                        <option value="days">Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Description of what this maintenance entails..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_default" name="is_default">
+                                <label class="form-check-label" for="is_default">
+                                    Make this the default maintenance requirement for this equipment type
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Requirement</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">Current Requirements</h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="requirementsAccordion">
+                        {% for type_id, data in requirements_by_type.items() %}
+                            {% if data.requirements %}
+                                <div class="card mb-2">
+                                    <div class="card-header" id="heading{{ type_id }}">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ type_id }}" aria-expanded="false" aria-controls="collapse{{ type_id }}">
+                                                {{ data.type_name }} ({{ data.requirements|length }})
+                                            </button>
+                                        </h2>
+                                    </div>
+
+                                    <div id="collapse{{ type_id }}" class="collapse" aria-labelledby="heading{{ type_id }}" data-parent="#requirementsAccordion">
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Maintenance Type</th>
+                                                            <th>Interval</th>
+                                                            <th>Description</th>
+                                                            <th>Default</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for req in data.requirements %}
+                                                            <tr>
+                                                                <td>{{ req.maintenance_type }}</td>
+                                                                <td>{{ req.interval_value }} {{ req.interval_unit }}</td>
+                                                                <td>{{ req.description }}</td>
+                                                                <td>
+                                                                    {% if req.is_default %}
+                                                                        <span class="badge badge-success">Default</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <form method="POST" action="{{ url_for('delete_maintenance_requirement', req_id=req.id) }}" style="display:inline">
+                                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this requirement?')">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0">Maintenance Types Guide</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Common Maintenance Types</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Regular Service
+                                    <span class="badge badge-primary badge-pill">Most equipment</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Hydro Test
+                                    <span class="badge badge-warning badge-pill">Tanks</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    VIP Inspection
+                                    <span class="badge badge-warning badge-pill">Tanks</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Calibration
+                                    <span class="badge badge-info badge-pill">Regulators, Computers</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Common Intervals</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    12 months
+                                    <span class="badge badge-primary badge-pill">Annual service</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    5 years
+                                    <span class="badge badge-warning badge-pill">Hydro test</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    12 months
+                                    <span class="badge badge-info badge-pill">VIP inspection</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    24 months
+                                    <span class="badge badge-secondary badge-pill">Biennial service</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block title %}Clear Checkout History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h2>Confirm Clear Checkout History</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h4 class="alert-heading">Warning!</h4>
+                <p>You are about to delete all checkout history records from the database. This action cannot be undone.</p>
+                <p>This will:</p>
+                <ul>
+                    <li>Delete all records of when items were checked out and returned</li>
+                    <li>Reset the "checked out" status of any currently checked out items</li>
+                    <li>Remove all borrower information</li>
+                </ul>
+            </div>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="confirmCheck" required>
+                        <label class="custom-control-label" for="confirmCheck">
+                            I understand this action cannot be undone
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Clear All Checkout History</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

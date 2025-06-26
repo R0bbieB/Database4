@@ -1,0 +1,529 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Item{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Add New Equipment</h1>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Item Information</h3>
+            <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#newItemTypeModal">
+                <i class="fas fa-plus"></i> Add New Type
+            </button>
+        </div>
+        <div class="card-body">
+            <form method="post" id="addItemForm">
+                <div class="form-group">
+                    <label for="item_type">Equipment Type</label>
+                    <select class="form-control" id="item_type" name="item_type" required onchange="showSpecificFields()">
+                        <option value="">Select Item Type</option>
+                        {% for type in item_types %}
+                            <option value="{{ type.id }}">{{ type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="manufacturer">Manufacturer</label>
+                    <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Model</label>
+                    <input type="text" class="form-control" id="model" name="model" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="serial">Serial Number / Barcode:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="serial" name="serial" required>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-info" id="scanBarcodeBtn">
+                                <i class="fas fa-barcode"></i> Scan
+                            </button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">
+                        Click "Scan" to enter barcode scanning mode, or connect a barcode scanner and scan directly into the field
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="intake_date">Intake Date</label>
+                    <input type="date" class="form-control" id="intake_date" name="intake_date" value="{{ today }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Storage Location</label>
+                    <select class="form-control" id="location" name="location" required>
+                        {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pm_required" name="pm_required" checked onchange="toggleMaintenanceSection()">
+                        <label class="form-check-label" for="pm_required">
+                            Preventative Maintenance Required
+                        </label>
+                    </div>
+                </div>
+
+                <div id="maintenance_section" class="card mt-3 mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Maintenance Requirements</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="maintenance_req_select">Maintenance Template</label>
+                            <select class="form-control" id="maintenance_req_select" onchange="applyMaintenanceTemplate()">
+                                <option value="">Select a maintenance template or customize below</option>
+                            </select>
+                            <small class="form-text text-muted">Select a predefined maintenance requirement or set custom values below</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maintenance_type">Maintenance Type</label>
+                            <select class="form-control" id="maintenance_type" name="maintenance_type">
+                                <option value="Regular Service">Regular Service</option>
+                                <option value="Hydro Test">Hydro Test</option>
+                                <option value="VIP Inspection">VIP Inspection</option>
+                                <option value="Calibration">Calibration</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maintenance_interval">Maintenance Interval</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="maintenance_interval" name="maintenance_interval" value="12" min="1">
+                                <div class="input-group-append">
+                                    <select class="form-control" id="interval_unit" name="interval_unit">
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                        <option value="days">Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">How often this equipment should undergo maintenance</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maintenance_notes">Maintenance Notes</label>
+                            <textarea class="form-control" id="maintenance_notes" name="maintenance_notes" rows="2" placeholder="Special instructions or requirements for maintenance..."></textarea>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="save_maintenance_template" name="save_maintenance_template">
+                            <label class="form-check-label" for="save_maintenance_template">
+                                Save these maintenance settings as a template for future items of this type
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="condition">Condition</label>
+                    <select class="form-control" id="condition" name="condition" required>
+                        <option value="1">1 - New</option>
+                        <option value="2" selected>2 - Good</option>
+                        <option value="3">3 - Fair</option>
+                        <option value="4">4 - Poor</option>
+                        <option value="5">5 - Unusable</option>
+                    </select>
+                </div>
+
+                <div id="regulator_fields" style="display: none;">
+                    <h4 class="mt-4 mb-3">Regulator Information</h4>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="has_computer" name="has_computer">
+                            <label class="form-check-label" for="has_computer">
+                                Has Working Computer
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mask_fields" style="display: none;">
+                    <h4 class="mt-4 mb-3">Mask Information</h4>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="has_comms" name="has_comms">
+                            <label class="form-check-label" for="has_comms">
+                                Has Communication Device
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="size">Size</label>
+                        <select class="form-control" id="size" name="size">
+                            <option value="">Select Size</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="tank_fields" style="display: none;">
+                    <h4 class="mt-4 mb-3">Tank Information</h4>
+                    <div class="form-group">
+                        <label for="tank_number">Tank Number</label>
+                        <input type="text" class="form-control" id="tank_number" name="tank_number">
+                    </div>
+                    <div class="form-group">
+                        <label for="hydro_date">Hydro Date</label>
+                        <input type="date" class="form-control" id="hydro_date" name="hydro_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="vip_date">VIP Date</label>
+                        <input type="date" class="form-control" id="vip_date" name="vip_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="tank_material">Tank Material</label>
+                        <select class="form-control" id="tank_material" name="tank_material">
+                            <option value="Steel">Steel</option>
+                            <option value="Aluminum">Aluminum</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="working_pressure">Working Pressure (PSI)</label>
+                        <input type="number" class="form-control" id="working_pressure" name="working_pressure" value="3000">
+                    </div>
+                    <div class="form-group">
+                        <label for="gas_type">Gas Type</label>
+                        <select class="form-control" id="gas_type" name="gas_type">
+                            <option value="Air" selected>Air</option>
+                            <option value="NITROX">NITROX</option>
+                            <option value="Oxygen">Oxygen</option>
+                            <option value="Trimix">Trimix</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                    <a href="{{ url_for('inventory_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add this modal for the barcode scanner -->
+<div class="modal fade" id="barcodeScannerModal" tabindex="-1" role="dialog" aria-labelledby="barcodeScannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="barcodeScannerModalLabel">Scan Barcode</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modalBarcodeInput">Scan barcode or enter serial number:</label>
+                    <input type="text" class="form-control form-control-lg" id="modalBarcodeInput"
+                           autofocus placeholder="Scan barcode..." autocomplete="off">
+                    <small class="form-text text-muted">Focus this field and scan item with connected barcode scanner</small>
+                </div>
+
+                <div id="modalScanStatus" class="text-center my-4" style="min-height: 60px;">
+                    <div class="scan-indicator">
+                        <i class="fas fa-barcode fa-3x text-muted"></i>
+                        <p class="mt-2 text-muted">Ready to scan</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Tip:</strong> Most barcode scanners automatically send an Enter key after scanning.
+                    If yours doesn't, press Enter or click the Use Barcode button after scanning.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="useBarcode">Use Barcode</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="newItemTypeModal" tabindex="-1" role="dialog" aria-labelledby="newItemTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newItemTypeModalLabel">Add New Item Type</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newItemTypeForm" action="/add_item_type" method="POST">
+                    <div class="form-group">
+                        <label for="new_type_name">Type Name:</label>
+                        <input type="text" class="form-control" id="new_type_name" name="new_type_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_type_description">Description:</label>
+                        <textarea class="form-control" id="new_type_description" name="new_type_description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="requires_maintenance" name="requires_maintenance" checked>
+                            <label class="form-check-label" for="requires_maintenance">
+                                Typically Requires Maintenance
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="default_maintenance_interval">Default Maintenance Interval (months):</label>
+                        <input type="number" class="form-control" id="default_maintenance_interval" name="default_maintenance_interval" value="12" min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitNewItemType()">Add Item Type</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function showSpecificFields() {
+        const itemType = document.getElementById('item_type').value;
+        document.getElementById('regulator_fields').style.display = 'none';
+        document.getElementById('mask_fields').style.display = 'none';
+        document.getElementById('tank_fields').style.display = 'none';
+
+        if (!itemType) {
+            return;
+        }
+
+        if (itemType == '2') {
+            document.getElementById('regulator_fields').style.display = 'block';
+        } else if (itemType == '4') {
+            document.getElementById('mask_fields').style.display = 'block';
+        } else if (itemType == '7') {
+            document.getElementById('tank_fields').style.display = 'block';
+        }
+
+        loadMaintenanceRequirements(itemType);
+    }
+
+    function loadMaintenanceRequirements(typeId) {
+        if (typeId == '7') {
+            document.getElementById('maintenance_type').value = 'Hydro Test';
+            document.getElementById('maintenance_interval').value = '5';
+            document.getElementById('interval_unit').value = 'years';
+        } else {
+            document.getElementById('maintenance_type').value = 'Regular Service';
+            document.getElementById('maintenance_interval').value = '12';
+            document.getElementById('interval_unit').value = 'months';
+        }
+
+        fetch(`/get_maintenance_requirements/${typeId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.requirements.length > 0) {
+                    window.maintenanceRequirements = data.requirements;
+                    const templateSelect = document.getElementById('maintenance_req_select');
+                    templateSelect.innerHTML = '<option value="">Select a maintenance template or customize below</option>';
+
+                    data.requirements.forEach(req => {
+                        const option = document.createElement('option');
+                        option.value = req.id;
+                        option.textContent = `${req.maintenance_type} (every ${req.interval_value} ${req.interval_unit})`;
+                        if (req.is_default) {
+                            option.textContent += ' - Default';
+                            option.selected = true;
+                        }
+                        templateSelect.appendChild(option);
+                    });
+
+                    const defaultReq = data.requirements.find(req => req.is_default);
+
+                    if (defaultReq) {
+                        document.getElementById('maintenance_type').value = defaultReq.maintenance_type;
+                        document.getElementById('maintenance_interval').value = defaultReq.interval_value;
+                        document.getElementById('interval_unit').value = defaultReq.interval_unit;
+                        if (defaultReq.description) {
+                            document.getElementById('maintenance_notes').value = defaultReq.description;
+                        }
+                    }
+
+                    const maintenanceTypeSelect = document.getElementById('maintenance_type');
+                    const defaultOptions = ['Regular Service', 'Hydro Test', 'VIP Inspection', 'Calibration', 'Other'];
+                    maintenanceTypeSelect.innerHTML = '';
+                    const uniqueTypes = new Set();
+
+                    data.requirements.forEach(req => {
+                        if (!uniqueTypes.has(req.maintenance_type)) {
+                            uniqueTypes.add(req.maintenance_type);
+                            const option = document.createElement('option');
+                            option.value = req.maintenance_type;
+                            option.textContent = req.maintenance_type;
+                            maintenanceTypeSelect.appendChild(option);
+                        }
+                    });
+
+                    defaultOptions.forEach(type => {
+                        if (!uniqueTypes.has(type)) {
+                            const option = document.createElement('option');
+                            option.value = type;
+                            option.textContent = type;
+                            maintenanceTypeSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    const templateSelect = document.getElementById('maintenance_req_select');
+                    templateSelect.innerHTML = '<option value="">No maintenance templates available</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading maintenance requirements:', error);
+            });
+    }
+
+    function applyMaintenanceTemplate() {
+        const templateId = document.getElementById('maintenance_req_select').value;
+
+        if (!templateId || !window.maintenanceRequirements) {
+            return;
+        }
+
+        const template = window.maintenanceRequirements.find(req => req.id == templateId);
+
+        if (template) {
+            document.getElementById('maintenance_type').value = template.maintenance_type;
+            document.getElementById('maintenance_interval').value = template.interval_value;
+            document.getElementById('interval_unit').value = template.interval_unit;
+            document.getElementById('maintenance_notes').value = template.description || '';
+        }
+    }
+
+    function toggleMaintenanceSection() {
+        const pmRequired = document.getElementById('pm_required').checked;
+        const maintenanceSection = document.getElementById('maintenance_section');
+
+        if (pmRequired) {
+            maintenanceSection.style.display = 'block';
+        } else {
+            maintenanceSection.style.display = 'none';
+        }
+    }
+
+    function submitNewItemType() {
+        const form = document.getElementById('newItemTypeForm');
+        const typeName = document.getElementById('new_type_name').value;
+
+        if (!typeName) {
+            alert('Please enter a type name');
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        fetch('/add_item_type', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('item_type');
+                const option = document.createElement('option');
+                option.value = data.id;
+                option.textContent = data.name;
+                select.appendChild(option);
+                select.value = data.id;
+                $('#newItemTypeModal').modal('hide');
+                alert('New item type added successfully!');
+                showSpecificFields();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the item type');
+        });
+    }
+
+    // Barcode scanner modal functionality
+    document.getElementById('scanBarcodeBtn').addEventListener('click', function() {
+        // Show the modal
+        $('#barcodeScannerModal').modal('show');
+
+        // Focus the input field after the modal is shown
+        $('#barcodeScannerModal').on('shown.bs.modal', function() {
+            document.getElementById('modalBarcodeInput').focus();
+        });
+    });
+
+    // Process barcode when Enter key is pressed in the modal
+    document.getElementById('modalBarcodeInput').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            useScannedBarcode();
+        }
+    });
+
+    // Process barcode when Use Barcode button is clicked
+    document.getElementById('useBarcode').addEventListener('click', useScannedBarcode);
+
+    function useScannedBarcode() {
+        const barcode = document.getElementById('modalBarcodeInput').value.trim();
+
+        if (barcode) {
+            // Set the barcode in the main form
+            document.getElementById('serial').value = barcode;
+
+            // Close the modal
+            $('#barcodeScannerModal').modal('hide');
+
+            // Show success feedback
+            const serialField = document.getElementById('serial');
+            serialField.classList.add('is-valid');
+
+            setTimeout(() => {
+                serialField.classList.remove('is-valid');
+            }, 3000);
+        } else {
+            // Show error in the modal
+            const scanStatus = document.getElementById('modalScanStatus');
+            scanStatus.innerHTML = `
+                <div class="scan-indicator">
+                    <i class="fas fa-exclamation-circle fa-3x text-danger"></i>
+                    <p class="mt-2 text-danger">Please scan a barcode first</p>
+                </div>
+            `;
+        }
+    }
+
+    // Reset the modal when it's closed
+    $('#barcodeScannerModal').on('hidden.bs.modal', function() {
+        document.getElementById('modalBarcodeInput').value = '';
+        document.getElementById('modalScanStatus').innerHTML = `
+            <div class="scan-indicator">
+                <i class="fas fa-barcode fa-3x text-muted"></i>
+                <p class="mt-2 text-muted">Ready to scan</p>
+            </div>
+        `;
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        showSpecificFields();
+        toggleMaintenanceSection();
+    });
+</script>
+{% endblock %}
+{% endblock %}
